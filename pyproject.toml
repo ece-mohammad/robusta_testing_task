@@ -1,0 +1,25 @@
+[project]
+name = "swag-labs"
+version = "0.1.0"
+description = "Automation test with pytest and Selenium for swag-labs website"
+readme = "README.md"
+authors = [
+    { name = "ece-mohammad", email = "kuro.ece@gmail.com" }
+]
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+swag-labs = "swag_labs:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.5",
+    "pytest-sugar>=1.0.0",
+    "pytest-xdist>=3.7.0",
+    "selenium>=4.33.0",
+]
