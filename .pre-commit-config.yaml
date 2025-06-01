@@ -11,16 +11,7 @@ repos:
 
   - repo: local
     hooks:
-    -   id: pytest
-        name: pytest
-        entry: pytest
-        language: python
-        always_run: true
-        pass_filenames: false
-
-  - repo: local
-    hooks:
-    -   id: black
+      - id: black
         name: black
         entry: black
         args:
@@ -28,10 +19,9 @@ repos:
         language: python
         types: [python]
 
-
   - repo: local
     hooks:
-    -   id: isort
+      - id: isort
         name: isort
         entry: isort
         language: python
@@ -39,8 +29,9 @@ repos:
 
   - repo: local
     hooks:
-      - id: flake8
-        name: flake8
-        entry: flake8
+      - id: pytest
+        name: pytest
+        entry: pytest
         language: python
-        types: [python]
+        always_run: true
+        pass_filenames: false

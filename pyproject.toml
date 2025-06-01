@@ -9,8 +9,8 @@ authors = [
 requires-python = ">=3.11"
 dependencies = []
 
-[project.scripts]
-swag-labs = "swag_labs:main"
+# [project.scripts]
+# swag-labs = "swag_labs:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -18,8 +18,10 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
+    "environs>=14.2.0",
+    "mypy>=1.16.0",
     "pytest>=8.3.5",
-    "pytest-sugar>=1.0.0",
     "pytest-xdist>=3.7.0",
     "selenium>=4.33.0",
+    "webdriver-manager>=4.0.2",
 ]
