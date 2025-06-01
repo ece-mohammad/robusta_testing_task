@@ -7,21 +7,24 @@ authors = [
     { name = "ece-mohammad", email = "kuro.ece@gmail.com" }
 ]
 requires-python = ">=3.11"
-dependencies = []
-
-# [project.scripts]
-# swag-labs = "swag_labs:main"
+dependencies = [
+    "environs>=14.2.0",
+    "mypy>=1.16.0",
+    "pytest>=8.3.5",
+    "pytest-sugar>=1.0.0",
+    "selenium>=4.33.0",
+    "webdriver-manager>=4.0.2",
+]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.pytest.ini_options]
+addopts = "--verbose"
+
 [dependency-groups]
 dev = [
-    "environs>=14.2.0",
-    "mypy>=1.16.0",
-    "pytest>=8.3.5",
-    "pytest-xdist>=3.7.0",
-    "selenium>=4.33.0",
-    "webdriver-manager>=4.0.2",
+    "black>=25.1.0",
+    "isort>=6.0.1",
 ]

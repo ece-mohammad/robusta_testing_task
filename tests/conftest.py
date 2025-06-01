@@ -10,6 +10,7 @@ import pytest
 from environs import env
 from selenium.webdriver.remote.webdriver import WebDriver
 
+from swag_labs.pages.login import LoginPage
 from tests.utils.driver import get_chrome_driver, get_firefox_driver
 
 env.read_env(".env.test")

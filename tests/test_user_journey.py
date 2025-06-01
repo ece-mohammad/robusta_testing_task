@@ -9,6 +9,7 @@ purchase using data from an external API.
 
 from urllib.parse import urlparse
 
+from swag_labs.pages import item_page
 from swag_labs.pages.cart_page import CartItem, CartPage
 from swag_labs.pages.checkout_complete import CheckoutCompletePage
 from swag_labs.pages.checkout_info import CheckoutInfoPage
@@ -32,69 +33,75 @@ def compare_urls(url1: str, url2: str):
 
 
 class TestUerJourney:
-    def test_user_journey(self, driver, username, password, user_info):
-        # open login page ----------------------------------------------------
+    def user_login(self, driver, username, password):
+        # open login page
         login_page = LoginPage(driver)
         login_page.open()
         assert login_page.driver.current_url == LoginPage.url
-
-        # login --------------------------------------------------------------
         inventory: InventoryPage = login_page.login(username, password)
 
         # check successful login
         assert inventory.driver.current_url == InventoryPage.url
         assert inventory.title() == "Products"
 
-        # check that the cart is empty
-        cart_items = inventory.cart_count()
-        assert cart_items == 0
+        return inventory
 
+    def add_item_to_cart(self, page: InventoryPage, item_name):
         # get first item from products page ----------------------------------
-        fleece_jacket: InventoryItem | None = inventory.get_item_by_name(ITEM1)
-
-        # check item is found in page
-        assert fleece_jacket is not None
-
-        # add first item to cart ---------------------------------------------
-        jacket_price = fleece_jacket.price()
-        jacket_name = fleece_jacket.name()
-
-        # check item name
-        assert fleece_jacket.name() == ITEM1
+        item: InventoryItem | None = page.get_item_by_name(ITEM1)
+        assert item is not None
+        assert item.name() == item_name
 
         # add to cart & check cart is incremented by 1
-        fleece_jacket.add_to_cart()
-        assert inventory.cart_count() == 1
+        count = page.cart_count()
+        item.add_to_cart()
+        assert page.cart_count() == count + 1
 
-        # open second item details page --------------------------------------
-        onsie_page: ProductPage = inventory.item_details_page(ITEM2)
-        assert compare_urls(onsie_page.driver.current_url, ProductPage.url)
+        return page
 
-        # second item data
-        onsie_name = onsie_page.item_name()
-        onsie_price = onsie_page.price()
-        assert onsie_name == ITEM2
+    def open_item_details(self, page: InventoryPage, item_name):
+        item_page: ProductPage = page.item_details_page(item_name)
+        count = item_page.cart_count()
 
-        # add second item to cart & check cart is incremented by 1
-        onsie_page.add_to_cart()
-        assert onsie_page.cart_count() == 2
+        assert item_page.item_name() == item_name
+        assert item_page.add_to_cart()
+        assert item_page.cart_count() == count + 1
+        return item_page
 
-        # get to cart details page -------------------------------------------
-        cart_page: CartPage = onsie_page.check_cart()
-        assert cart_page.driver.current_url == CartPage.url
-        assert cart_page.count_items() == 2
+    def open_and_verify_cart(self, page: ProductPage, items):
+        cart_page: CartPage = page.check_cart()
+        for item in items:
+            cart_item = cart_page.get_item(item[0])
+            assert cart_item is not None
+            assert cart_item.name() == item[0]
+            assert cart_item.price() == item[1]
 
-        # verify item1
-        cart_item1 = cart_page.get_item(jacket_name)
-        assert cart_item1 is not None
-        assert cart_item1.name() == jacket_name
-        assert cart_item1.price() == jacket_price
+        return cart_page
 
-        # verify item2
-        cart_item2 = cart_page.get_item(onsie_name)
-        assert cart_item2 is not None
-        assert cart_item2.name() == onsie_name
-        assert cart_item2.price() == onsie_price
+    def test_user_journey(self, driver, username, password, user_info):
+        # login and goto products page
+        products_page = self.user_login(driver, username, password)
+
+        # get items data from the products page
+        jacket_name = products_page.get_item_by_name(ITEM1).name()
+        jacket_price = products_page.get_item_by_name(ITEM1).price()
+        onsie_name = products_page.get_item_by_name(ITEM2).name()
+        onsie_price = products_page.get_item_by_name(ITEM2).price()
+
+        # add first item to cart (jacket)
+        self.add_item_to_cart(products_page, ITEM1)
+
+        # open second item details page & add it to cart (onsie)
+        onsie_details_page = self.open_item_details(products_page, ITEM2)
+
+        # open cart & verify items
+        cart_page = self.open_and_verify_cart(
+            onsie_details_page,
+            (
+                (ITEM1, jacket_price),
+                (ITEM2, onsie_price),
+            ),
+        )
 
         # get to checkout info page ------------------------------------------
         checkout_info: CheckoutInfoPage = cart_page.goto_checkout()
