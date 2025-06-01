@@ -8,12 +8,13 @@ import re
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
 
 from swag_labs.pages.page import Page
 
-__all__ = ("InventoryPage", "InventoryItem")
+__all__ = (
+    "InventoryPage",
+    "InventoryItem",
+)
 
 
 class InventoryItem:
@@ -111,6 +112,7 @@ class InventoryItem:
         return self.name()
 
 
+@Page.register_page_class(url="https://www.saucedemo.com/inventory.html")
 class InventoryPage(Page):
     """A class that represents the inventory page of the swag-labs website
 
@@ -140,14 +142,6 @@ class InventoryPage(Page):
 
     def __init__(self, driver):
         super().__init__(name=self.page_name, url=self.url, driver=driver)
-
-    def open(self):
-        super().open()
-        WebDriverWait(
-            self.driver,
-            30,
-            poll_frequency=0.5,
-        ).until(EC.presence_of_all_elements_located(self.ITEM_CONTAINER))
 
     def _cart_button(self):
         return self.find_element(*self.CART_BUTTON)
@@ -191,6 +185,15 @@ class InventoryPage(Page):
                 return item
         return None
 
+    def item_details_page(self, name: str) -> Page:
+        """open item's details page by its name"""
+        item = self.get_item_by_name(name)
+        if item is not None:
+            item.link().click()
+            page_class = Page.get_page_class(self.driver.current_url)
+            return page_class(self.driver)
+        return self
+
     def add_item_to_cart(self, name: str) -> Page:
         """add an item to the cart by its name"""
         item = self.get_item_by_name(name)
@@ -202,8 +205,5 @@ class InventoryPage(Page):
         """logout from site"""
         self._side_bar_button().click()
         self._logout_link().click()
-        return Page(
-            name="login",
-            url="https://www.saucedemo.com/",
-            driver=self.driver,
-        )
+        page_class = Page.get_page_class(self.driver.current_url)
+        return page_class(self.driver)

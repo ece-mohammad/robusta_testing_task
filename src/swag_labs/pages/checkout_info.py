@@ -3,14 +3,18 @@
 
 """Checkout info (checkout step 1) page object model for swag-labs"""
 
+from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 from swag_labs.pages.page import Page
 
 __all__ = ("CheckoutInfoPage",)
 
 
+@Page.register_page_class("https://www.saucedemo.com/checkout-step-one.html")
 class CheckoutInfoPage(Page):
     """A class that represents the checkout info page for swag-labs.
 
@@ -48,6 +52,14 @@ class CheckoutInfoPage(Page):
 
     def __init__(self, driver):
         super().__init__(name=self.page_name, url=self.url, driver=driver)
+
+    def open(self):
+        super().open()
+        WebDriverWait(
+            self.driver,
+            10,
+            poll_frequency=0.5,
+        ).until(EC.presence_of_element_located(self.CONTINUE_BUTTON))
 
     def _first_name(self) -> WebElement:
         return self.find_element(*self.FIRST_NAME_INPUT)
@@ -93,7 +105,10 @@ class CheckoutInfoPage(Page):
 
     def error_message(self) -> str:
         """get the error message (if any)"""
-        return self._error_message().text.strip()
+        try:
+            return self._error_message().text.strip()
+        except NoSuchElementException:
+            return ""
 
     def continue_checkout(self):
         """continue checkout"""
@@ -101,17 +116,11 @@ class CheckoutInfoPage(Page):
         if self.driver.current_url == self.url:
             return self
 
-        return Page(
-            name="checkout_overview",
-            url="https://www.saucedemo.com/checkout-step-two.html",
-            driver=self.driver,
-        )
+        page_class = Page.get_page_class(self.driver.current_url)
+        return page_class(self.driver)
 
     def cancel_checkout(self):
         """cancel checkout"""
         self._cancel_button().click()
-        return Page(
-            name="inventory",
-            url="https://www.saucedemo.com/inventory.html",
-            driver=self.driver,
-        )
+        page_class = Page.get_page_class(self.driver.current_url)
+        return page_class(self.driver)

@@ -5,6 +5,8 @@
 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 from swag_labs.pages.cart_page import CartItem
 from swag_labs.pages.page import Page
@@ -12,6 +14,7 @@ from swag_labs.pages.page import Page
 __all__ = ("CheckoutOverviewPage",)
 
 
+@Page.register_page_class("https://www.saucedemo.com/checkout-step-two.html")
 class CheckoutOverviewPage(Page):
     """A class that represents the checkout overview page (checkout step 2)
     for swag-labs.
@@ -56,6 +59,14 @@ class CheckoutOverviewPage(Page):
 
     def __init__(self, driver):
         super().__init__(name=self.page_name, url=self.url, driver=driver)
+
+    def open(self):
+        super().open()
+        WebDriverWait(
+            self.driver,
+            10,
+            poll_frequency=0.5,
+        ).until(EC.presence_of_element_located(self.FINISH_BUTTON))
 
     def _finish_button(self) -> WebElement:
         return self.find_element(*self.FINISH_BUTTON)
@@ -118,17 +129,11 @@ class CheckoutOverviewPage(Page):
     def cancel_checkout(self):
         """cancel checkout"""
         self._cancel_button().click()
-        return Page(
-            "Inventory",
-            "https://www.saucedemo.com/inventory.html",
-            self.driver,
-        )
+        page_class = Page.get_page_class(self.driver.current_url)
+        return page_class(self.driver)
 
     def finish_checkout(self):
         """finish checkout"""
         self._finish_button().click()
-        return Page(
-            name="checkout_complete",
-            url="https://www.saucedemo.com/checkout-complete.html",
-            driver=self.driver,
-        )
+        page_class = Page.get_page_class(self.driver.current_url)
+        return page_class(self.driver)

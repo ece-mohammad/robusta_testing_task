@@ -3,6 +3,9 @@
 
 """pytest fixtures for swag-labs website tests"""
 
+import json
+from urllib.request import Request, urlopen
+
 import pytest
 from environs import env
 from selenium.webdriver.remote.webdriver import WebDriver
@@ -10,6 +13,11 @@ from selenium.webdriver.remote.webdriver import WebDriver
 from tests.utils.driver import get_chrome_driver, get_firefox_driver
 
 env.read_env(".env.test")
+
+DATA_END_POINT = env.str(
+    "DATA_END_POINT",
+    default="https://my-json-server.typicode.com/ece-mohammad/fake_json_server_store/users/1",
+)
 
 
 @pytest.fixture(scope="session")
@@ -35,13 +43,13 @@ def setup():
     browser.close()
 
 
+# pylint: disable=redefined-outer-name
 @pytest.fixture(scope="function")
-def driver(request, setup: WebDriver):
+def driver(setup: WebDriver):
     """Fixture to clean browser state before each test function."""
     # Clear cookies and storage to ensure clean state
     setup.get("about:blank")
-    request.cls.driver = setup
-    yield
+    yield setup
     setup.delete_all_cookies()
     setup.execute_script("window.sessionStorage.clear();")
     setup.execute_script("window.localStorage.clear();")
@@ -57,3 +65,9 @@ def username() -> str:
 def password() -> str:
     """get login password"""
     return "secret_sauce"
+
+
+@pytest.fixture(scope="session")
+def user_info():
+    request = Request(DATA_END_POINT)
+    return json.loads(urlopen(request).read().decode("utf-8"))

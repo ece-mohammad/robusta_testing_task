@@ -9,10 +9,15 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.remote.webelement import WebElement
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 from swag_labs.pages.page import Page
 
-__all__ = ("CartPage", "CartItem")
+__all__ = (
+    # "CartPage",
+    "CartItem",
+)
 
 
 class CartItem:
@@ -80,17 +85,14 @@ class CartItem:
 
     def quantity(self):
         """get item's quantity"""
-        count = self._quantity().text.strip()
-        match = self.PRICE_PATTERN.search(count)
-        if match is None:
-            raise NoSuchElementException("Couldn't parse quantity: " + count)
-        return int(match.group(1))
+        return int(self._quantity().text.strip())
 
     def remove_item(self):
         """remove the item from the cart"""
         self._cancel_button().click()
 
 
+@Page.register_page_class("https://www.saucedemo.com/cart.html")
 class CartPage(Page):
     """A class that represents cart page for swag-labs.
 
@@ -113,7 +115,6 @@ class CartPage(Page):
         checkout button.
 
 
-
     """
 
     page_name = "cart"
@@ -121,10 +122,18 @@ class CartPage(Page):
 
     CART_ITEM_CONTAINER = (By.CLASS_NAME, "cart_item")
     BACK_BUTTON = (By.CLASS_NAME, "back")
-    CHECKOUT_BUTTON = (By.CLASS_NAME, "checkout-button")
+    CHECKOUT_BUTTON = (By.CLASS_NAME, "checkout_button")
 
     def __init__(self, driver: WebDriver):
         super().__init__(name=self.page_name, url=self.url, driver=driver)
+
+    def open(self):
+        super().open()
+        WebDriverWait(
+            self.driver,
+            10,
+            poll_frequency=0.5,
+        ).until(EC.presence_of_all_elements_located(self.CART_ITEM_CONTAINER))
 
     def _items_container(self):
         return self.find_elements(*self.CART_ITEM_CONTAINER)
@@ -138,6 +147,13 @@ class CartPage(Page):
     def items(self):
         """get items in cart"""
         return (CartItem(element) for element in self._items_container())
+
+    def get_item(self, name: str) -> CartItem | None:
+        """get item by name"""
+        for item in self.items():
+            if item.name().lower() == name.strip().lower():
+                return item
+        return None
 
     def count_items(self):
         """get number of unique items in cart"""
@@ -167,17 +183,11 @@ class CartPage(Page):
     def go_back(self):
         """go back to inventory"""
         self._back_button().click()
-        return Page(
-            name="inventory",
-            url="https://www.saucedemo.com/inventory.html",
-            driver=self.driver,
-        )
+        page_class = Page.get_page_class(self.driver.current_url)
+        return page_class(self.driver)
 
     def goto_checkout(self):
         """go to checkout"""
         self._checkout_button().click()
-        return Page(
-            name="checkout_info",
-            url="https://www.saucedemo.com/checkout-step-one.html",
-            driver=self.driver,
-        )
+        page_class = Page.get_page_class(self.driver.current_url)
+        return page_class(self.driver)

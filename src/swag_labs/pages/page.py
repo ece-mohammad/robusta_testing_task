@@ -4,6 +4,7 @@
 """Base POM (Page Object Model) class for swag-labs pages"""
 
 from typing import List
+from urllib.parse import urlparse, urlunparse
 
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
@@ -32,6 +33,10 @@ class Page:
         - find_elements(): find multiple elements on the page
     """
 
+    # a dictionary to register POM classes
+    # so that they can be retrieved by URL
+    _pages: dict = {}
+
     TITLE = (By.CLASS_NAME, "title")
 
     def __init__(
@@ -42,6 +47,38 @@ class Page:
         self.driver: WebDriver = driver
         if auto_open and not self.is_open():
             self.open()
+
+    @staticmethod
+    def discard_url_params(url):
+        """remove url parameters from url"""
+        parsed = urlparse(url)
+        return urlunparse(
+            (
+                parsed.scheme,
+                parsed.netloc,
+                parsed.path,
+                None,
+                None,
+                None,
+            )
+        )
+
+    @classmethod
+    def register_page_class(cls, url):
+        """decorator to register a page class"""
+
+        def wrapper(page_class):
+            key = cls.discard_url_params(url)
+            cls._pages[key] = page_class
+            return page_class
+
+        return wrapper
+
+    @classmethod
+    def get_page_class(cls, url):
+        """get the page class for a given url"""
+        key = cls.discard_url_params(url)
+        return cls._pages[key]
 
     def title(self) -> str:
         """get the title of the page"""
@@ -83,7 +120,3 @@ class Page:
 
     def __str__(self):
         return f"{self.page_name}: {self.title()}"
-
-
-# TODO register pages in page class
-# TODO get pages by url and path
