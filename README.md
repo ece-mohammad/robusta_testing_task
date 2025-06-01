@@ -1,1 +1,3 @@
-# robusta_testing_task
+# Swag labs
+
+Automation testing for swag-labs website using Pytest and Selenium.
